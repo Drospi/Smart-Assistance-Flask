@@ -45,36 +45,34 @@
     </div>
 
     <script>
-        document.getElementById('captureForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+    document.getElementById('captureForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const id = document.getElementById('studentId').value;
+        const name = document.getElementById('studentName').value;
+        const statusDiv = document.getElementById('status');
+        
+        statusDiv.innerHTML = '<div class="loading">📸 Iniciando captura de rostros... La cámara se abrirá en una nueva ventana.</div>';
+        
+        try {
+            const response = await fetch('/api/capture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: id, name: name})
+            });
             
-            const id = document.getElementById('studentId').value;
-            const name = document.getElementById('studentName').value;
-            const statusDiv = document.getElementById('status');
+            const data = await response.json();
             
-            statusDiv.innerHTML = '<div class="loading">🔄 Procesando captura de rostros...</div>';
-            
-            try {
-                const response = await fetch('/api/capture', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({id: id, name: name})
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    statusDiv.innerHTML = '<div class="success">✅ ' + data.message + '</div>';
-                    setTimeout(() => {
-                        window.location.href = '/train';
-                    }, 2000);
-                } else {
-                    statusDiv.innerHTML = '<div class="error">❌ Error: ' + data.message + '</div>';
-                }
-            } catch (error) {
-                statusDiv.innerHTML = '<div class="error">❌ Error de conexión</div>';
+            if (data.success) {
+                statusDiv.innerHTML = '<div class="success">✅ ' + data.message + '<br>⚠️ IMPORTANTE: Después de capturar, ve a la sección de ENTRENAMIENTO para entrenar el modelo.</div>';
+                document.getElementById('captureForm').reset();
+            } else {
+                statusDiv.innerHTML = '<div class="error">❌ Error: ' + data.message + '</div>';
             }
-        });
-    </script>
+        } catch (error) {
+            statusDiv.innerHTML = '<div class="error">❌ Error de conexión: ' + error.message + '</div>';
+        }
+    });
+</script>
 </body>
 </html>

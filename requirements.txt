@@ -1,6 +1,7 @@
-Flask==2.3.2
-opencv-python==4.8.0.74
 numpy==1.24.3
+opencv-python==4.8.0.74
+opencv-contrib-python==4.8.0.74
 pandas==2.0.3
-yagmail==0.15.293
+Flask==2.3.2
 Pillow==10.0.0
+yagmail==0.15.293
