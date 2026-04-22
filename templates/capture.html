@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capturar Rostros</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn">← Volver</a>
+            <h1>📸 Capturar Rostros</h1>
+            <p>Registrar nuevo estudiante en el sistema</p>
+        </div>
+
+        <div class="form-container">
+            <form id="captureForm">
+                <div class="form-group">
+                    <label for="studentId">ID del Estudiante:</label>
+                    <input type="number" id="studentId" name="id" required placeholder="Ej: 1001">
+                </div>
+
+                <div class="form-group">
+                    <label for="studentName">Nombre Completo:</label>
+                    <input type="text" id="studentName" name="name" required placeholder="Ej: Juan Pérez">
+                </div>
+
+                <button type="submit" class="btn-primary">Iniciar Captura</button>
+            </form>
+        </div>
+
+        <div id="status" class="status-message"></div>
+
+        <div class="info-box">
+            <h3>📌 Instrucciones:</h3>
+            <ul>
+                <li>Asegúrate de tener buena iluminación</li>
+                <li>Mantén tu rostro frente a la cámara</li>
+                <li>Se capturarán aproximadamente 100 imágenes</li>
+                <li>No te muevas demasiado durante la captura</li>
+                <li>Presiona 'q' para cancelar en cualquier momento</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('captureForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('studentId').value;
+            const name = document.getElementById('studentName').value;
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.innerHTML = '<div class="loading">🔄 Procesando captura de rostros...</div>';
+            
+            try {
+                const response = await fetch('/api/capture', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id: id, name: name})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = '<div class="success">✅ ' + data.message + '</div>';
+                    setTimeout(() => {
+                        window.location.href = '/train';
+                    }, 2000);
+                } else {
+                    statusDiv.innerHTML = '<div class="error">❌ Error: ' + data.message + '</div>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="error">❌ Error de conexión</div>';
+            }
+        });
+    </script>
+</body>
+</html>

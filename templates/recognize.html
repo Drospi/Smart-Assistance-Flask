@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconocimiento Facial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn">← Volver</a>
+            <h1>👤 Reconocimiento Facial</h1>
+            <p>Tomar asistencia en tiempo real</p>
+        </div>
+
+        <div class="video-container">
+            <div id="videoStatus" class="status-message">
+                <button id="startRecognition" class="btn-primary">Iniciar Reconocimiento</button>
+            </div>
+        </div>
+
+        <div id="attendanceResult" class="result-box"></div>
+
+        <div class="info-box">
+            <h3>📌 Funcionamiento:</h3>
+            <ul>
+                <li>La cámara se abrirá automáticamente</li>
+                <li>El sistema reconocerá los rostros registrados</li>
+                <li>Se registrará la asistencia automáticamente</li>
+                <li>Presiona 'q' para detener el reconocimiento</li>
+                <li>El archivo CSV se guardará en la carpeta Attendance</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('startRecognition').addEventListener('click', async () => {
+            const statusDiv = document.getElementById('videoStatus');
+            const resultDiv = document.getElementById('attendanceResult');
+            
+            statusDiv.innerHTML = '<div class="loading">🎥 Iniciando reconocimiento... La cámara se abrirá en una nueva ventana</div>';
+            
+            try {
+                const response = await fetch('/api/recognize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = '<div class="success">✅ Asistencia registrada exitosamente</div>';
+                    setTimeout(() => {
+                        window.location.href = '/attendance';
+                    }, 2000);
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Error: ' + data.message + '</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">❌ Error de conexión</div>';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Asistencia Facial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Sistema de Asistencia por Reconocimiento Facial</h1>
+            <p>Gestión completa de asistencia con IA</p>
+        </div>
+
+        <div class="dashboard">
+            <div class="card" onclick="location.href='/capture'">
+                <div class="card-icon">📸</div>
+                <h3>Capturar Rostros</h3>
+                <p>Registrar nuevos estudiantes en el sistema</p>
+            </div>
+
+            <div class="card" onclick="location.href='/train'">
+                <div class="card-icon">🧠</div>
+                <h3>Entrenar Modelo</h3>
+                <p>Entrenar la IA con las imágenes capturadas</p>
+            </div>
+
+            <div class="card" onclick="location.href='/recognize'">
+                <div class="card-icon">👤</div>
+                <h3>Reconocimiento</h3>
+                <p>Tomar asistencia en tiempo real</p>
+            </div>
+
+            <div class="card" onclick="location.href='/attendance'">
+                <div class="card-icon">📊</div>
+                <h3>Ver Asistencias</h3>
+                <p>Consultar historial de asistencias</p>
+            </div>
+
+            <div class="card" onclick="location.href='/reset'">
+                <div class="card-icon">🔄</div>
+                <h3>Resetear Sistema</h3>
+                <p>Limpiar todos los datos del sistema</p>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number" id="studentCount">0</div>
+                <div class="stat-label">Estudiantes Registrados</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="attendanceCount">0</div>
+                <div class="stat-label">Registros de Asistencia</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Cargar estadísticas
+        fetch('/api/attendance-files')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('attendanceCount').textContent = data.length;
+            });
+        
+        // Contar estudiantes (necesitarás crear este endpoint)
+        fetch('/api/student-count')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('studentCount').textContent = data.count || 0;
+            })
+            .catch(() => document.getElementById('studentCount').textContent = '0');
+    </script>
+</body>
+</html>

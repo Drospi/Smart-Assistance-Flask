@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resetear Sistema</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn">← Volver</a>
+            <h1>🔄 Resetear Sistema de Asistencia</h1>
+            <p>⚠️ Esta acción es irreversible</p>
+        </div>
+
+        <div class="form-container">
+            <div class="info-box" style="background: #ffebee; border-left-color: #f44336; margin-bottom: 20px;">
+                <h3 style="color: #c62828;">🚨 ADVERTENCIA:</h3>
+                <ul>
+                    <li>Se eliminarán TODAS las imágenes capturadas</li>
+                    <li>Se eliminará el modelo entrenado (Trainner.yml)</li>
+                    <li>Se eliminarán TODOS los registros de asistencia</li>
+                    <li>Esta acción NO se puede deshacer</li>
+                    <li>Los datos de estudiantes se conservarán</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="stat-box" style="background: #ffebee;">
+                    <div class="stat-number" id="imageCount">0</div>
+                    <div class="stat-label">Imágenes a eliminar</div>
+                </div>
+                <div class="stat-box" style="background: #ffebee; margin-top: 10px;">
+                    <div class="stat-number" id="attendanceCount">0</div>
+                    <div class="stat-label">Archivos de asistencia</div>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <button id="resetBtn" class="btn-primary" style="background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);">
+                    🗑️ Resetear Sistema
+                </button>
+                <button id="cancelBtn" class="btn-primary" style="background: #666; margin-top: 10px;">
+                    ❌ Cancelar
+                </button>
+            </div>
+
+            <div id="resetStatus" class="status-message"></div>
+        </div>
+
+        <!-- Modal de confirmación -->
+        <div id="confirmModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2>⚠️ Confirmación Final</h2>
+                <p>¿Estás ABSOLUTAMENTE seguro de que quieres resetear el sistema?</p>
+                <p style="color: red; font-weight: bold;">Esta acción es irreversible y eliminará todos los datos.</p>
+                <div style="margin-top: 20px;">
+                    <button id="confirmResetBtn" class="btn-primary" style="background: #f44336;">Sí, resetear todo</button>
+                    <button id="closeModalBtn" class="btn-primary" style="background: #666;">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            text-align: center;
+            animation: modalSlideIn 0.3s;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal h2 {
+            color: #f44336;
+            margin-bottom: 15px;
+        }
+    </style>
+
+    <script>
+        let stats = {
+            images: 0,
+            attendance: 0
+        };
+        
+        // Cargar estadísticas
+        async function loadStats() {
+            try {
+                // Contar imágenes
+                const imageResponse = await fetch('/api/image-count');
+                const imageData = await imageResponse.json();
+                stats.images = imageData.count || 0;
+                document.getElementById('imageCount').textContent = stats.images;
+                
+                // Contar archivos de asistencia
+                const attendanceResponse = await fetch('/api/attendance-files');
+                const attendanceData = await attendanceResponse.json();
+                stats.attendance = attendanceData.length;
+                document.getElementById('attendanceCount').textContent = stats.attendance;
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
+        
+        // Mostrar modal de confirmación
+        function showConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'flex';
+        }
+        
+        // Cerrar modal
+        function closeModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'none';
+        }
+        
+        // Resetear sistema
+        async function resetSystem() {
+            const resetBtn = document.getElementById('resetBtn');
+            const statusDiv = document.getElementById('resetStatus');
+            
+            resetBtn.disabled = true;
+            resetBtn.textContent = '⏳ Resetear...';
+            
+            statusDiv.innerHTML = '<div class="loading">🔄 Resetendo sistema, por favor espera...</div>';
+            
+            try {
+                const response = await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = '<div class="success">✅ ' + data.message + '</div>';
+                    
+                    // Redirigir después de 2 segundos
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    statusDiv.innerHTML = '<div class="error">❌ Error: ' + data.message + '</div>';
+                    resetBtn.disabled = false;
+                    resetBtn.textContent = '🗑️ Resetear Sistema';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="error">❌ Error de conexión: ' + error.message + '</div>';
+                resetBtn.disabled = false;
+                resetBtn.textContent = '🗑️ Resetear Sistema';
+            }
+            
+            closeModal();
+        }
+        
+        // Event listeners
+        document.getElementById('resetBtn').addEventListener('click', showConfirmModal);
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+        document.getElementById('confirmResetBtn').addEventListener('click', resetSystem);
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        
+        // Cerrar modal si se hace clic fuera de él
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('confirmModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+        
+        // Cargar estadísticas al iniciar
+        loadStats();
+    </script>
+</body>
+</html>

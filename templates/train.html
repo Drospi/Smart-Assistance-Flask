@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenar Modelo Facial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn">← Volver</a>
+            <h1>🧠 Entrenar Modelo de Reconocimiento Facial</h1>
+            <p>Entrena la IA con las imágenes capturadas</p>
+        </div>
+
+        <div class="form-container">
+            <div class="info-box" style="margin-bottom: 20px;">
+                <h3>📌 Información importante:</h3>
+                <ul>
+                    <li>Asegúrate de haber capturado rostros previamente</li>
+                    <li>El entrenamiento puede tomar varios minutos dependiendo de la cantidad de imágenes</li>
+                    <li>No cierres la ventana durante el proceso</li>
+                    <li>Se generará un archivo Trainer.yml con el modelo entrenado</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center;">
+                <button id="trainBtn" class="btn-primary">🚀 Iniciar Entrenamiento</button>
+            </div>
+
+            <div id="trainStatus" class="status-message"></div>
+            <div id="trainProgress" class="progress-bar" style="display: none;">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="stats" style="margin-top: 30px;">
+            <div class="stat-box">
+                <div class="stat-number" id="imageCount">0</div>
+                <div class="stat-label">Imágenes disponibles</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="studentCount">0</div>
+                <div class="stat-label">Estudiantes registrados</div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .progress-bar {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            width: 0%;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+
+    <script>
+        // Cargar estadísticas al iniciar
+        async function loadStats() {
+            try {
+                // Contar imágenes en TrainingImage
+                const imageResponse = await fetch('/api/image-count');
+                const imageData = await imageResponse.json();
+                document.getElementById('imageCount').textContent = imageData.count || 0;
+                
+                // Contar estudiantes
+                const studentResponse = await fetch('/api/student-count');
+                const studentData = await studentResponse.json();
+                document.getElementById('studentCount').textContent = studentData.count || 0;
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
+        
+        document.getElementById('trainBtn').addEventListener('click', async () => {
+            const trainBtn = document.getElementById('trainBtn');
+            const statusDiv = document.getElementById('trainStatus');
+            const progressBar = document.getElementById('trainProgress');
+            const progressFill = document.querySelector('.progress-fill');
+            
+            // Deshabilitar botón durante el entrenamiento
+            trainBtn.disabled = true;
+            trainBtn.textContent = '⏳ Entrenando...';
+            
+            // Mostrar barra de progreso
+            progressBar.style.display = 'block';
+            progressFill.style.width = '10%';
+            progressFill.textContent = 'Iniciando...';
+            
+            statusDiv.innerHTML = '<div class="loading">🔄 Iniciando entrenamiento del modelo...</div>';
+            
+            try {
+                // Simular progreso
+                let progress = 10;
+                const interval = setInterval(() => {
+                    if (progress < 90) {
+                        progress += 10;
+                        progressFill.style.width = progress + '%';
+                        progressFill.textContent = progress + '%';
+                    }
+                }, 1000);
+                
+                const response = await fetch('/api/train', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                clearInterval(interval);
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    progressFill.style.width = '100%';
+                    progressFill.textContent = '100%';
+                    statusDiv.innerHTML = '<div class="success">✅ ' + data.message + '</div>';
+                    
+                    // Redirigir después de 2 segundos
+                    setTimeout(() => {
+                        window.location.href = '/recognize';
+                    }, 2000);
+                } else {
+                    statusDiv.innerHTML = '<div class="error">❌ Error: ' + data.message + '</div>';
+                    trainBtn.disabled = false;
+                    trainBtn.textContent = '🚀 Iniciar Entrenamiento';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="error">❌ Error de conexión: ' + error.message + '</div>';
+                trainBtn.disabled = false;
+                trainBtn.textContent = '🚀 Iniciar Entrenamiento';
+                progressBar.style.display = 'none';
+            }
+        });
+        
+        // Cargar estadísticas al iniciar
+        loadStats();
+    </script>
+</body>
+</html>

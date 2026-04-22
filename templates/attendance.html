@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Asistencias</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn">← Volver</a>
+            <h1>📊 Historial de Asistencias</h1>
+            <p>Registros de asistencia del sistema</p>
+        </div>
+
+        <div class="attendance-controls">
+            <button id="refreshBtn" class="btn-primary">⟳ Actualizar</button>
+        </div>
+
+        <div class="files-list" id="filesList">
+            <div class="loading">Cargando archivos...</div>
+        </div>
+
+        <div id="attendanceData" class="attendance-table"></div>
+    </div>
+
+    <script>
+        let currentFile = null;
+
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/attendance-files');
+                const files = await response.json();
+                
+                const filesList = document.getElementById('filesList');
+                if (files.length === 0) {
+                    filesList.innerHTML = '<div class="info-box">📭 No hay archivos de asistencia aún</div>';
+                    return;
+                }
+                
+                filesList.innerHTML = `
+                    <h3>Archivos disponibles:</h3>
+                    <div class="file-buttons">
+                        ${files.map(file => `
+                            <button onclick="viewFile('${file.name}')" class="file-btn">
+                                📄 ${file.name}<br>
+                                <small>${file.modified}</small>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('filesList').innerHTML = '<div class="error">Error cargando archivos</div>';
+            }
+        }
+
+        async function viewFile(filename) {
+            currentFile = filename;
+            const attendanceDiv = document.getElementById('attendanceData');
+            attendanceDiv.innerHTML = '<div class="loading">Cargando datos...</div>';
+            
+            try {
+                const response = await fetch(`/api/attendance-view/${filename}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    attendanceDiv.innerHTML = `<div class="error">${data.error}</div>`;
+                    return;
+                }
+                
+                if (data.length === 0) {
+                    attendanceDiv.innerHTML = '<div class="info-box">No hay registros en este archivo</div>';
+                    return;
+                }
+                
+                let html = '<h3>Registros de Asistencia:</h3>';
+                html += '<div class="table-responsive"><table>';
+                html += '<thead><tr>';
+                Object.keys(data[0]).forEach(key => {
+                    html += `<th>${key}</th>`;
+                });
+                html += '<th>Acciones</th></tr></thead><tbody>';
+                
+                data.forEach(row => {
+                    html += '<tr>';
+                    Object.values(row).forEach(value => {
+                        html += `<td>${value}</td>`;
+                    });
+                    html += `<td><a href="/download/${filename}" class="download-link">⬇️ Descargar</a></td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+                attendanceDiv.innerHTML = html;
+            } catch (error) {
+                attendanceDiv.innerHTML = '<div class="error">Error cargando los datos</div>';
+            }
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', loadFiles);
+        
+        loadFiles();
+    </script>
+</body>
+</html>
